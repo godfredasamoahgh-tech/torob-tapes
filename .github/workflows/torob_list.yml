@@ -1,0 +1,32 @@
+name: torob_list
+run-name: list vacuums harvest
+on:
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  list:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - run: pip install curl_cffi
+      - name: fetch product list
+        run: python scripts/list_stage.py list.json
+        env:
+          PYTHONUNBUFFERED: '1'
+      - name: commit
+        run: |
+          if [ -f list.json ]; then
+            git config user.name "torob-bot"; git config user.email "torob-bot@users.noreply.github.com"
+            git add list.json || true
+            git commit -m "update list.json at $(date -u +%FT%TZ)" || true
+            git push || true
+          fi
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: torob-vacuums-list
+          path: list.json
+          if-no-files-found: ignore
