@@ -55,6 +55,13 @@ with open(a.out, "a", encoding="utf-8") as f_out:
                 r = s.get(u, headers=H, timeout=25)
                 if r.status_code == 200 and r.text.strip() and "آیا شما یک ربات" not in r.text:
                     d = r.json()
+                    
+                    p_info = d.get("products_info")
+                    sellers = p_info.get("result", []) if isinstance(p_info, dict) else (p_info or [])
+                    
+                    p_store = d.get("products_in_store_info")
+                    in_store = p_store.get("result", []) if isinstance(p_store, dict) else (p_store or [])
+                    
                     record = {
                         "prk": prk,
                         "name": d.get("name1") or meta.get("title") or "",
@@ -63,10 +70,10 @@ with open(a.out, "a", encoding="utf-8") as f_out:
                         "price_text": d.get("price_text") or meta.get("price_text"),
                         "web_client_absolute_url": d.get("web_client_absolute_url") or meta.get("url") or f"https://torob.com/p/{prk}/",
                         "category": d.get("category_name") or "جارو برقی",
-                        "shop_count": d.get("shop_count") or 0,
+                        "shop_count": d.get("shop_count") or len(sellers),
                         "struct_specs": d.get("structural_specs"),
-                        "sellers": d.get("products_info", []),
-                        "in_store": d.get("products_in_store_info", []),
+                        "sellers": sellers,
+                        "in_store": in_store,
                         "tag": meta.get("tag", "")
                     }
                     f_out.write(json.dumps(record, ensure_ascii=False) + "\n")
