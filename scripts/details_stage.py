@@ -74,6 +74,7 @@ with open(a.out, "a", encoding="utf-8") as f_out:
                         "struct_specs": d.get("structural_specs"),
                         "sellers": sellers,
                         "in_store": in_store,
+                        "category_section": meta.get("category_section") or meta.get("tag", ""),
                         "tag": meta.get("tag", "")
                     }
                     f_out.write(json.dumps(record, ensure_ascii=False) + "\n")
