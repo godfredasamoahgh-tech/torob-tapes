@@ -1,0 +1,48 @@
+name: torob_lg_parts
+run-name: harvest LG 2000 vacuum parts
+on:
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  list:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - run: pip install curl_cffi
+      - name: fetch list
+        run: python scripts/lg_list_stage.py lg_list.json
+        env:
+          PYTHONUNBUFFERED: '1'
+      - uses: actions/upload-artifact@v4
+        with:
+          name: lg-list
+          path: lg_list.json
+
+  details:
+    needs: list
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: ['0/2', '1/2']
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - run: pip install curl_cffi
+      - uses: actions/download-artifact@v4
+        with:
+          name: lg-list
+      - name: fetch details
+        run: |
+          SHARD_CLEAN=$(echo "${{ matrix.shard }}" | tr '/' '_')
+          python scripts/lg_details_stage.py --shard "${{ matrix.shard }}" --budget 85 --list lg_list.json --out "lg_details_${SHARD_CLEAN}.jsonl"
+        env:
+          PYTHONUNBUFFERED: '1'
+      - uses: actions/upload-artifact@v4
+        with:
+          name: details-${{ strategy.job-index }}
+          path: "*.jsonl"
